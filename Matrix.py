@@ -154,23 +154,21 @@ class Matrix:
 		for i in range(4):
 			for j in range(4):
 				sum = 0.0
-				for k in range(4):
-					sum += self.values[i][k] * matrix.values[k][j]
-				return_matrix.values[i][j] = sum
+				return_matrix.values[i][j] = self.values[i][0] * matrix.values[0][j] + self.values[i][1] * matrix.values[1][j] + self.values[i][2] * matrix.values[2][j] + self.values[i][3] * matrix.values[3][j];
 		return return_matrix
 
 	def transformPoint(self, point):
-		x = point.x * self.values[0][0] + point.y * self.values[0][1] + point.z * self.values[0][2] + self.values[0][3]
-		y = point.x * self.values[1][0] + point.y * self.values[1][1] + point.z * self.values[1][2] + self.values[1][3]
-		z = point.x * self.values[2][0] + point.y * self.values[2][1] + point.z * self.values[2][2] + self.values[2][3]
-		t = point.x * self.values[3][0] + point.y * self.values[3][1] + point.z * self.values[3][2] + self.values[3][3]
+		x = point.x * self.values[0][0] + point.y * self.values[1][0] + point.z * self.values[2][0] + self.values[3][0]
+		y = point.x * self.values[0][1] + point.y * self.values[1][1] + point.z * self.values[2][1] + self.values[3][1]
+		z = point.x * self.values[0][2] + point.y * self.values[1][2] + point.z * self.values[2][2] + self.values[3][2]
+		t = point.x * self.values[0][3] + point.y * self.values[1][3] + point.z * self.values[2][3] + self.values[3][3]
 		
 		return Vector(x/t, y/t, z/t)
 
 	def transformVector(self, vector):
-		x = vector.x * self.values[0][0] + vector.y * self.values[0][1] + vector.z * self.values[0][2]
-		y = vector.x * self.values[1][0] + vector.y * self.values[1][1] + vector.z * self.values[1][2]
-		z = vector.x * self.values[2][0] + vector.y * self.values[2][1] + vector.z * self.values[2][2]
+		x = vector.x * self.values[0][0] + vector.y * self.values[1][0] + vector.z * self.values[2][0]
+		y = vector.x * self.values[0][1] + vector.y * self.values[1][1] + vector.z * self.values[2][1]
+		z = vector.x * self.values[0][2] + vector.y * self.values[1][2] + vector.z * self.values[2][2]
 
 		return Vector(x, y, z)
 		
