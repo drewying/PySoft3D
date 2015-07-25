@@ -1,4 +1,5 @@
 import math
+from mpmath import *
 from Vector import *
 
 class Matrix:	
@@ -78,14 +79,83 @@ class Matrix:
 
 		return matrix
 
+	@classmethod
+	def look_at_lh(self, camera_position, camera_target, camera_up):
+		zaxis = (camera_target - camera_position).normalized()
+		xaxis = camera_up.cross(zaxis).normalized()
+		yaxis = zaxis.cross(xaxis)
+		
+		matrix = Matrix()
+		matrix.values = [[xaxis.x, yaxis.x, zaxis.x, -xaxis.x],
+				 [xaxis.y, yaxis.y, zaxis.y, -yaxis.y],
+				 [xaxis.z, yaxis.z, zaxis.z, -zaxis.z],
+				 [xaxis.dot(camera_position) * -1, yaxis.dot(camera_position) * -1, zaxis.dot(camera_position) * -1, 1.0]]
+		return matrix
+
+	@classmethod
+	def look_at_rh(self, camera_position, camera_target, camera_up):
+		zaxis = (camera_position - camera_target).normalized()
+		xaxis = camera_up.cross(zaxis).normalized()
+		yaxis = zaxis.cross(xaxis)
+		
+		matrix = Matrix()
+		matrix.values = [[xaxis.x, yaxis.x, zaxis.x, -xaxis.x],
+				 [xaxis.y, yaxis.y, zaxis.y, -yaxis.y],
+				 [xaxis.z, yaxis.z, zaxis.z, -zaxis.z],
+				 [xaxis.dot(camera_position) * -1, yaxis.dot(camera_position) * -1, zaxis.dot(camera_position) * -1, 1.0]]
+		return matrix
+
+	@classmethod
+	def perspective_fov_lh(self, fov, aspect_ratio, znear, zfar):
+		matrix = Matrix()
+		height = cot(fov/2.0)
+		width = height * aspect_ratio
+		
+		matrix.values = [[width, 0.0, 0.0, 0.0],
+				 [0.0, height, 0.0, 0.0],
+				 [0.0, 0.0, zfar/(zfar-znear), 1.0],
+				 [0.0, 0.0, -znear*zfar/(zfar-znear), 0.0]]
+		return matrix
+
+	@classmethod
+	def perspective_fov_rh(self, fov, aspect_ratio, znear, zfar):
+		matrix = Matrix()
+		height = cot(fov/2.0)
+		width = height * aspect_ratio
+		
+		matrix.values = [[width, 0.0, 0.0, 0.0],
+				 [0.0, height, 0.0, 0.0],
+				 [0.0, 0.0, zfar/(znear-zfar), -1.0],
+				 [0.0, 0.0, znear*zfar/(znear-zfar), 0.0]]
+		return matrix
+
+	@classmethod
+	def perspective_rh(self, width, height, znear, zfar):
+		matrix = Matrix()
+		
+		matrix.values = [[2.0 * znear/width, 0.0, 0.0, 0.0],
+				 [0.0, 2.0*znear/height, 0.0, 0.0],
+				 [0.0, 0.0, zfar/(znear-zfar), -1.0],
+				 [0.0, 0.0, znear*zfar/(znear-zfar), 0.0]]
+		return matrix
+
+	@classmethod
+	def perspective_lh(self, width, height, znear, zfar):
+		matrix = Matrix()
+		
+		matrix.values = [[2.0 * znear/width, 0.0, 0.0, 0.0],
+				 [0.0, 2.0*znear/height, 0.0, 0.0],
+				 [0.0, 0.0, zfar/(zfar-znear), 1.0],
+				 [0.0, 0.0, znear*zfar/(znear-zfar), 0.0]]
+		return matrix
 	
 	def __mul__(self, matrix):
 		return_matrix = Matrix.zero_matrix()
-		for i in range(3):
-			for j in range(3):
+		for i in range(4):
+			for j in range(4):
 				sum = 0.0
-				for k in range(3):
-					sub += self.values[i][k] * matrix.values[k][j]
+				for k in range(4):
+					sum += self.values[i][k] * matrix.values[k][j]
 				return_matrix.values[i][j] = sum
 		return return_matrix
 
@@ -94,7 +164,7 @@ class Matrix:
 		y = point.x * self.values[1][0] + point.y * self.values[1][1] + point.z * self.values[1][2] + self.values[1][3]
 		z = point.x * self.values[2][0] + point.y * self.values[2][1] + point.z * self.values[2][2] + self.values[2][3]
 		t = point.x * self.values[3][0] + point.y * self.values[3][1] + point.z * self.values[3][2] + self.values[3][3]
-
+		
 		return Vector(x/t, y/t, z/t)
 
 	def transformVector(self, vector):
