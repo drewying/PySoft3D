@@ -18,18 +18,25 @@ class mainWindow:
 	
 
 	def __init__(self, width, height):
-		self.data = data=numpy.array(numpy.ndarray((height,width)),dtype=int)
 		self.width = width
 		self.height = height
+
+
+		self.data = numpy.array(numpy.ndarray((self.height, self.width)),dtype=int)
+		self.depth_buffer = numpy.array(numpy.ndarray((self.height,self.width)),dtype=float)
 		self.root = Tk()
 		self.frame = Frame(self.root, width=self.width, height=self.height)
 		self.frame.pack()
 		self.canvas = Canvas(self.frame, width=self.width, height=self.height)
 		self.canvas.place(x=-2,y=-2)
 
-		self.camera_position = Vector(0.0, 0.0, -1.0)
+		self.camera_position = Vector(0.0, 0.5, -5.0)
 		self.camera_target = Vector(0.0, 0.0, 0.0)
 		self.camera_up = Vector(0.0, 1.0, 0.0)
+
+		view_matrix = Matrix.look_at(self.camera_position, self.camera_target, self.camera_up)
+		project_matrix = Matrix.perspective(0.78, 640/480.0, -1.0, 1.0)
+		self.world_matrix = project_matrix * view_matrix
 		
 		self.triangles = []
 		self.points = []
@@ -57,15 +64,15 @@ class mainWindow:
 		self.root.after(0, self.loop)
 		self.root.mainloop()
 
-	def plotPoint(self, x, y):
+	def plotPoint(self, x, y, color):
 		if x >= 0 and y >= 0 and x < self.width and y < self.height:
-			self.data[y][x] = 255
+			self.data[y][x] = int(color)
 			
 	def plotLine(self, p0, p1):
-		x0 = int(self.width - ((p0.x * self.width/2) + self.width/2))
-		y0 = int(self.height - ((p0.y * self.height/2) + self.height/2))
-		x1 = int(self.width - ((p1.x * self.width/2) + self.width/2))
-		y1 = int(self.height - ((p1.y * self.height/2) + self.height/2))
+		x0 = int(p0.x) #int(self.width - ((p0.x * self.width/2) + self.width/2))
+		y0 = int(p0.y) #int(self.height - ((p0.y * self.height/2) + self.height/2))
+		x1 = int(p1.x) #int(self.width - ((p1.x * self.width/2) + self.width/2))
+		y1 = int(p1.y) #int(self.height - ((p1.y * self.height/2) + self.height/2))
 		
 		dx = abs(x1 - x0)
 		dy = abs(y1 - y0)
@@ -87,74 +94,77 @@ class mainWindow:
 				y0 += sy
 				
 
-
+	def edgeFunction(self, a, b, c):
+		return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)
 
 	def plotScanLine(y, p1, p2, p3, p4):
 		gradient1 = ((y - p1.y) / (p2.y - p1.y)) if (p1.y != p2.y) else 1
 		gradient2 = ((y - p3.y) / (p4.y - p3.y)) if (p3.y != p4.y) else 1
-
-		
 		
 	def plotTriangle(self, triangle):
-		if triangle.p1.y > triangle.p2.y:
-			temp = triangle.p2
-			triangle.p2 = triangle.p1
-			p1 = temp
-
-		if triangle.p2.y > triangle.p3.y:
-			temp = triangle.p2
-			triangle.p2 = triangle.p3
-			triangle.p3 = temp
-
-		if triangle.p1.y > triangle.p2.y:
-			temp = triangle.p2
-			triangle.p2 = triangle.p1
-			p1 = temp
-
-		dP1P2 = 0
-		dP1P3 = 0
-
-		if triangle.p2.y - triangle.p1.y > 0:
-			dP1P2 = (triangle.p2.x - triangle.p1.x) / (triangle.p2.y - triangle.p1.y)
-		else:
-			dP1P2 = 0
-
-		if triangle.p3.y - triangle.p1.y > 0:
-			dP1P3 = (triangle.p3.x - triangle.p1.x) / (triangle.p3.y - triangle.p1.y)
-		else:
-			dP1P3 = 0
-
-		y1 = int(self.height - ((triangle.p1.y * self.height/2) + self.height/2))
-		y2 = int(self.height - ((triangle.p2.y * self.height/2) + self.height/2))
-		y3 = int(self.height - ((triangle.p3.y * self.height/2) + self.height/2))
+		v0 = self.project(triangle.p1)
+		v1 = self.project(triangle.p2)
+		v2 = self.project(triangle.p3)
+		v0.z = 1.0/v0.z
+		v1.z = 1.0/v1.z
+		v2.z = 1.0/v2.z
 		
-		if dP1P2 > dP1P3:
-			for y in range(y1, y3):
-				if (y < y2):
-					plotScanLine(y, y1, y3, y1, y2)
-				else:
-					plotScanLine(y, y1, y3, y2, y3)
-		else:
-			for y in range(y1, y3):
-				if (y < y2):
-					plotScanLine(y, y1, y2, y1, y3)
-				else:
-					plotScanLine(y, y2, y3, y1, y3)
+		x_min = int(min(v0.x, v1.x, v2.x))
+		x_max = int(max(v0.x, v1.x, v2.x) + 1)
+		y_min = int(min(v0.y, v1.y, v2.y))
+		y_max = int(max(v0.y, v1.y, v2.y) + 1)
+	
+		for x in range(x_min, x_max):
+			for y in range(y_min, y_max):
+				p = Vector(x,y,0)
+				area = self.edgeFunction(v0, v1, v2)
+				w0 = self.edgeFunction(v1, v2, p)
+				w1 = self.edgeFunction(v2, v0, p)
+				w2 = self.edgeFunction(v0, v1, p)
+				if w0 >= 0 and w1 >= 0 and w2 >=0:
+					w0 /= area
+					w1 /= area
+					w2 /= area
+					z = (1.0/(v0.z * w0 + v1.z * w1 +  v2.z * w2))
+					if (z < self.depth_buffer[y][x]):
+						self.depth_buffer[y][x] = z
+						#v0cam = self.world_matrix.transformVector(v0)
+						#v1cam = self.world_matrix.transformVector(v1)
+						#v2cam = self.world_matrix.transformVector(v2)
+
+						#px = (v0cam.x/-v0cam.z) * w0 + (v1cam.x/-v1cam.z) * w1 + (v2cam.x/-v2cam.z) * w2 
+						#py = (v0cam.y/-v0cam.z) * w0 + (v1cam.y/-v1cam.z) * w1 + (v2cam.y/-v2cam.z) * w2
+
+						#p = Vector(px * z, py * z, -z)
+						#pt = p.normalized() * -1
+						#n = (v1cam - v0cam).cross(v2cam - v0cam).normalized()
+						#self.plotPoint(x, y, 255 * max(0, n.dot(pt)))
+						self.plotPoint(x,y,255)
+		
+		
+		
 			
 	def drawTriangle(self,triangle):
-		self.plotLine(triangle.p1, triangle.p2)
-		self.plotLine(triangle.p1, triangle.p3)
-		self.plotLine(triangle.p2, triangle.p3)
-		#self.plotPoint(triangle.p1.x, triangle.p1.y)
-		#self.plotPoint(triangle.p2.x, triangle.p2.y)
-		#self.plotPoint(triangle.p3.x, triangle.p3.y)
+		self.plotTriangle(triangle)
+		#self.plotLine(self.project(triangle.p1), self.project(triangle.p2))
+		#self.plotLine(self.project(triangle.p1), self.project(triangle.p3))
+		#self.plotLine(self.project(triangle.p2), self.project(triangle.p3))
+
 
 	def project(self, point):
+		point = self.world_matrix.transformPoint(point)
 		x = (point.x * float(self.width) + float(self.width) / 2.0)
-		y = (-point.y * float(self.height) + float(self.height) / 2.0)
-		return Vector(x, y,0.0)
+		y = (point.y * float(self.height) + float(self.height) / 2.0)
+		return Vector(x, y, -point.z)
 												 
 	def loop(self):
+		self.data.fill(0)
+		self.depth_buffer.fill(1000.0)
+		self.angle += 0.1
+		
+		for t in self.triangles:
+			self.drawTriangle(t * Matrix.rotateY(self.angle))
+			
 		global data
 		self.im=Image.fromstring('L', (self.data.shape[1],\
 				self.data.shape[0]), self.data.astype('b').tostring())
@@ -165,17 +175,7 @@ class mainWindow:
 		if self.times%33==0:
 			print("%.02f FPS"%(self.times/(time.clock()-self.timestart)))
 
-		self.data = data=numpy.array(numpy.ndarray((self.height, self.width)),dtype=int)
-		self.angle += 0.1
-
-		view_matrix = Matrix.look_at(self.camera_position, self.camera_target, self.camera_up)
-		project_matrix = Matrix.perspective(0.78, 640/480.0, 0.01, 1.0)
-		m = project_matrix * view_matrix
-		v = Vector(1.0,-1.0,0.0)
-		v = m.transformPoint(v)
-		print(self.project(v))
-		for t in self.triangles:
-			self.drawTriangle(t * Matrix.rotateY(self.angle))         
+		         
 		self.root.after(0, self.loop)
 		
 
