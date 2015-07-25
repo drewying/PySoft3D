@@ -12,7 +12,7 @@ class Vector:
 		return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
 
 	def normalized(self):
-		length = self.length()
+		length = self.length_sq()
 		scale = 1.0 / length
 		return Vector(self.x * scale, self.y * scale, self.z * scale)
 
@@ -20,7 +20,7 @@ class Vector:
 		return Vector(self.x - right.x, self.y - right.y, self.z - right.z)                
 	
 	def __str__(self):
-		return "(" + str(self.y) + "," + str(self.y) + "," + str(self.z) + ")"
+		return "(" + str(self.x) + "," + str(self.y) + "," + str(self.z) + ")"
 	def cross(self, right):
 		return Vector(self.y * right.z - self.z * right.y, self.z * right.x - self.x * right.z, self.x * right.y - self.y * right.x)
 

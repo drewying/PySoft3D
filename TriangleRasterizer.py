@@ -27,7 +27,7 @@ class mainWindow:
 		self.canvas = Canvas(self.frame, width=self.width, height=self.height)
 		self.canvas.place(x=-2,y=-2)
 
-		self.camera_position = Vector(0.0, 0.0, 1.0)
+		self.camera_position = Vector(0.0, 0.0, -1.0)
 		self.camera_target = Vector(0.0, 0.0, 0.0)
 		self.camera_up = Vector(0.0, 1.0, 0.0)
 		
@@ -168,10 +168,10 @@ class mainWindow:
 		self.data = data=numpy.array(numpy.ndarray((self.height, self.width)),dtype=int)
 		self.angle += 0.1
 
-		view_matrix = Matrix.look_at_lh(self.camera_position, self.camera_target, self.camera_up)
-		projection_matrix = Matrix.perspective_rh(640.0, 480.0, -1.0, 1.0)
-		m = view_matrix * projection_matrix
-		v = Vector(0.5,1.0,0.0)
+		view_matrix = Matrix.look_at(self.camera_position, self.camera_target, self.camera_up)
+		project_matrix = Matrix.perspective(0.78, 640/480.0, 0.01, 1.0)
+		m = project_matrix * view_matrix
+		v = Vector(1.0,-1.0,0.0)
 		v = m.transformPoint(v)
 		print(self.project(v))
 		for t in self.triangles:
