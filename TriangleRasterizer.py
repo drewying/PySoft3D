@@ -151,7 +151,7 @@ class mainWindow:
 
 	def project(self, point):
 		x = (point.x * float(self.width) + float(self.width) / 2.0)
-		y = (point.y * float(self.height) + float(self.height) / 2.0)
+		y = (-point.y * float(self.height) + float(self.height) / 2.0)
 		return Vector(x, y,0.0)
 												 
 	def loop(self):
