@@ -7,6 +7,7 @@ from tkinter import *
 import numpy
 import time
 from PIL import Image, ImageTk
+import cProfile
 
 WIDTH = 640
 HEIGHT = 480
@@ -14,13 +15,9 @@ HEIGHT = 480
 
 class mainWindow:
 
-	
-	
-
 	def __init__(self, width, height):
 		self.width = width
 		self.height = height
-
 
 		self.data = numpy.array(numpy.ndarray((self.height, self.width)),dtype=int)
 		self.depth_buffer = numpy.array(numpy.ndarray((self.height,self.width)),dtype=float)
@@ -30,13 +27,13 @@ class mainWindow:
 		self.canvas = Canvas(self.frame, width=self.width, height=self.height)
 		self.canvas.place(x=-2,y=-2)
 
-		self.camera_position = Vector(0.0, 0.5, -5.0)
+		self.camera_position = Vector(0.0,0.0, 5.0)
 		self.camera_target = Vector(0.0, 0.0, 0.0)
 		self.camera_up = Vector(0.0, 1.0, 0.0)
 
 		view_matrix = Matrix.look_at(self.camera_position, self.camera_target, self.camera_up)
 		project_matrix = Matrix.perspective(0.78, 640/480.0, -1.0, 1.0)
-		self.world_matrix = project_matrix * view_matrix
+		self.world_matrix = view_matrix * project_matrix
 		
 		self.triangles = []
 		self.points = []
@@ -96,10 +93,6 @@ class mainWindow:
 
 	def edgeFunction(self, a, b, c):
 		return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)
-
-	def plotScanLine(y, p1, p2, p3, p4):
-		gradient1 = ((y - p1.y) / (p2.y - p1.y)) if (p1.y != p2.y) else 1
-		gradient2 = ((y - p3.y) / (p4.y - p3.y)) if (p3.y != p4.y) else 1
 		
 	def plotTriangle(self, triangle):
 		v0 = self.project(triangle.p1)
@@ -113,6 +106,12 @@ class mainWindow:
 		x_max = int(max(v0.x, v1.x, v2.x) + 1)
 		y_min = int(min(v0.y, v1.y, v2.y))
 		y_max = int(max(v0.y, v1.y, v2.y) + 1)
+
+		x_min = max(0, x_min)
+		x_max = min(self.width, x_max)
+		y_min = max(0, y_min)
+		y_max = min(self.height, y_max)
+		
 	
 		for x in range(x_min, x_max):
 			for y in range(y_min, y_max):
@@ -164,17 +163,18 @@ class mainWindow:
 		self.depth_buffer.fill(1000.0)
 		self.angle += 0.1
 
-		#self.drawTriangle(Triangle(Vector(0.0,0.5,0.0), Vector(-0.5,-0.5,0.0), Vector(0.5,-0.5,0.0)))
+		#self.drawTriangle(Triangle(Vector(0.0,0.5,0.0), Vector(-0.5,-0.5,0.0), Vector(0.5,-0.5,0.0)) * Matrix.rotateY(self.angle))
 		for t in self.triangles:
-			self.drawTriangle(t * Matrix.rotateY(self.angle))
-		global data
+			self.drawTriangle(t)
+
 		self.im=Image.fromstring('L', (self.data.shape[1],\
 				self.data.shape[0]), self.data.astype('b').tostring())
 		self.photo = ImageTk.PhotoImage(image=self.im)
 		self.canvas.create_image(0,0,image=self.photo,anchor=NW)
 		self.root.update()
 		self.times+=1
-		if self.times%33==0:
+		print(self.times)
+		if self.times%10==0:
 			print("%.02f FPS"%(self.times/(time.clock()-self.timestart)))
 
 		         
@@ -187,5 +187,3 @@ def main():
 	
 if __name__ == "__main__":
 	main()
-
-

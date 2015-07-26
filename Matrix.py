@@ -81,15 +81,15 @@ class Matrix:
 
 	@classmethod
 	def look_at(self, camera_position, camera_target, camera_up):
-		n = (camera_position - camera_target).normalized()
-		u = (camera_up.cross(n)).normalized()
-		v = (n.cross(u)).normalized()
+		zaxis = (camera_position - camera_target).normalized()
+		xaxis = (camera_up.cross(zaxis)).normalized()
+		yaxis = zaxis.cross(xaxis)
 
 		matrix = Matrix()
-		matrix.values = [[u.x, v.x, n.x, -camera_position.x],
-				 [u.y, v.y, n.y, -camera_position.y],
-				 [u.z, v.z, n.z, -camera_position.z],
-				 [0.0, 0.0, 0.0, 1.0]]
+		matrix.values = [[xaxis.x, yaxis.x, zaxis.x, 0.0],
+				 [xaxis.y, yaxis.y, zaxis.y, 0.0],
+				 [xaxis.z, yaxis.z, zaxis.z, 0.0],
+				 [-xaxis.dot(camera_position), -yaxis.dot(camera_position), -zaxis.dot(camera_position), 1.0]]
 		return matrix
 
 
