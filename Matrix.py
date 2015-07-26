@@ -131,5 +131,36 @@ class Matrix:
 		z = vector.x * self.values[2][0] + vector.y * self.values[2][1] + vector.z * self.values[2][2] 
 
 		return Vector(x, y, z)
-		
 
+	def det3(self,a,b,c,d,e,f,g,h,i):
+	    return a*e*i + d*h*c + g*b*f - g*e*c - d*b*i - a*h*f;
+
+	def inverse(self):
+		det  = self.values[0][0] * self.det3(self.values[1][1], self.values[1][2], self.values[1][3], self.values[2][1], self.values[2][2], self.values[2][3], self.values[3][1], self.values[3][2], self.values[3][3])
+		det -= self.values[0][1] * self.det3(self.values[1][0], self.values[1][2], self.values[1][3], self.values[2][0], self.values[2][2], self.values[2][3], self.values[3][0], self.values[3][2], self.values[3][3])
+		det += self.values[0][2] * self.det3(self.values[1][0], self.values[1][1], self.values[1][3], self.values[2][0], self.values[2][1], self.values[2][3], self.values[3][0], self.values[3][1], self.values[3][3])
+		det -= self.values[0][3] * self.det3(self.values[1][0], self.values[1][1], self.values[1][2], self.values[2][0], self.values[2][1], self.values[2][2], self.values[3][0], self.values[3][1], self.values[3][2])
+
+		inverse = Matrix.zero_matrix()
+
+		inverse.values[0][0] =  self.det3(self.values[1][1], self.values[1][2], self.values[1][3], self.values[2][1], self.values[2][2], self.values[2][3], self.values[3][1], self.values[3][2], self.values[3][3]) / det
+		inverse.values[0][1] = -self.det3(self.values[0][1], self.values[0][2], self.values[0][3], self.values[2][1], self.values[2][2], self.values[2][3], self.values[3][1], self.values[3][2], self.values[3][3]) / det
+		inverse.values[0][2] =  self.det3(self.values[0][1], self.values[0][2], self.values[0][3], self.values[1][1], self.values[1][2], self.values[1][3], self.values[3][1], self.values[3][2], self.values[3][3]) / det
+		inverse.values[0][3] = -self.det3(self.values[0][1], self.values[0][2], self.values[0][3], self.values[1][1], self.values[1][2], self.values[1][3], self.values[2][1], self.values[2][2], self.values[2][3]) / det
+
+		inverse.values[1][0] = -self.det3(self.values[1][0], self.values[1][2], self.values[1][3], self.values[2][0], self.values[2][2], self.values[2][3], self.values[3][0], self.values[3][2], self.values[3][3]) / det
+		inverse.values[1][1] =  self.det3(self.values[0][0], self.values[0][2], self.values[0][3], self.values[2][0], self.values[2][2], self.values[2][3], self.values[3][0], self.values[3][2], self.values[3][3]) / det
+		inverse.values[1][2] = -self.det3(self.values[0][0], self.values[0][2], self.values[0][3], self.values[1][0], self.values[1][2], self.values[1][3], self.values[3][0], self.values[3][2], self.values[3][3]) / det
+		inverse.values[1][3] =  self.det3(self.values[0][0], self.values[0][2], self.values[0][3], self.values[1][0], self.values[1][2], self.values[1][3], self.values[2][0], self.values[2][2], self.values[2][3]) / det
+
+		inverse.values[2][0] =  self.det3(self.values[1][0], self.values[1][1], self.values[1][3], self.values[2][0], self.values[2][1], self.values[2][3], self.values[3][0], self.values[3][1], self.values[3][3]) / det
+		inverse.values[2][1] = -self.det3(self.values[0][0], self.values[0][1], self.values[0][3], self.values[2][0], self.values[2][1], self.values[2][3], self.values[3][0], self.values[3][1], self.values[3][3]) / det
+		inverse.values[2][2] =  self.det3(self.values[0][0], self.values[0][1], self.values[0][3], self.values[1][0], self.values[1][1], self.values[1][3], self.values[3][0], self.values[3][1], self.values[3][3]) / det
+		inverse.values[2][3] = -self.det3(self.values[0][0], self.values[0][1], self.values[0][3], self.values[1][0], self.values[1][1], self.values[1][3], self.values[2][0], self.values[2][1], self.values[2][3]) / det
+
+		inverse.values[3][0] = -self.det3(self.values[1][0], self.values[1][1], self.values[1][2], self.values[2][0], self.values[2][1], self.values[2][2], self.values[3][0], self.values[3][1], self.values[3][2]) / det
+		inverse.values[3][1] =  self.det3(self.values[0][0], self.values[0][1], self.values[0][2], self.values[2][0], self.values[2][1], self.values[2][2], self.values[3][0], self.values[3][1], self.values[3][2]) / det
+		inverse.values[3][2] = -self.det3(self.values[0][0], self.values[0][1], self.values[0][2], self.values[1][0], self.values[1][1], self.values[1][2], self.values[3][0], self.values[3][1], self.values[3][2]) / det
+		inverse.values[3][3] =  self.det3(self.values[0][0], self.values[0][1], self.values[0][2], self.values[1][0], self.values[1][1], self.values[1][2], self.values[2][0], self.values[2][1], self.values[2][2]) / det
+
+		return inverse

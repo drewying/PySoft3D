@@ -125,21 +125,23 @@ class mainWindow:
 					w0 /= area
 					w1 /= area
 					w2 /= area
-					z = (1.0/(v0.z * w0 + v1.z * w1 +  v2.z * w2))
+					z = -(1.0/(v0.z * w0 + v1.z * w1 +  v2.z * w2))
 					if (z < self.depth_buffer[y][x]):
 						self.depth_buffer[y][x] = z
-						#v0cam = self.world_matrix.transformVector(v0)
-						#v1cam = self.world_matrix.transformVector(v1)
-						#v2cam = self.world_matrix.transformVector(v2)
+						v0cam = self.world_matrix.transformPoint(triangle.p1)
+						v1cam = self.world_matrix.transformPoint(triangle.p2)
+						v2cam = self.world_matrix.transformPoint(triangle.p3)
+						px = (v0cam.x/-v0cam.z) * w0 + (v1cam.x/-v1cam.z) * w1 + (v2cam.x/-v2cam.z) * w2 
+						py = (v0cam.y/-v0cam.z) * w0 + (v1cam.y/-v1cam.z) * w1 + (v2cam.y/-v2cam.z) * w2
 
-						#px = (v0cam.x/-v0cam.z) * w0 + (v1cam.x/-v1cam.z) * w1 + (v2cam.x/-v2cam.z) * w2 
-						#py = (v0cam.y/-v0cam.z) * w0 + (v1cam.y/-v1cam.z) * w1 + (v2cam.y/-v2cam.z) * w2
-
-						#p = Vector(px * z, py * z, -z)
-						#pt = p.normalized() * -1
-						#n = (v1cam - v0cam).cross(v2cam - v0cam).normalized()
-						#self.plotPoint(x, y, 255 * max(0, n.dot(pt)))
-						self.plotPoint(x,y,255)
+						pt = Vector(px * z, py * z, -z)
+						
+						n = (v1cam - v0cam).cross(v2cam - v0cam).normalized()
+						view_direction = pt.normalized()
+						view_direction = Vector(-pt.x, -pt.y, -pt.z)
+						cosine = max(0, n.dot(view_direction))
+						self.plotPoint(x,y, cosine * 255)
+						
 		
 		
 		
@@ -161,10 +163,10 @@ class mainWindow:
 		self.data.fill(0)
 		self.depth_buffer.fill(1000.0)
 		self.angle += 0.1
-		
+
+		#self.drawTriangle(Triangle(Vector(0.0,0.5,0.0), Vector(-0.5,-0.5,0.0), Vector(0.5,-0.5,0.0)))
 		for t in self.triangles:
 			self.drawTriangle(t * Matrix.rotateY(self.angle))
-			
 		global data
 		self.im=Image.fromstring('L', (self.data.shape[1],\
 				self.data.shape[0]), self.data.astype('b').tostring())
