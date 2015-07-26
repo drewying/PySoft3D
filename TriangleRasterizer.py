@@ -9,8 +9,8 @@ import time
 from PIL import Image, ImageTk
 import cProfile
 
-WIDTH = 640
-HEIGHT = 480
+WIDTH = 320
+HEIGHT = 240
 
 
 class mainWindow:
@@ -27,13 +27,14 @@ class mainWindow:
 		self.canvas = Canvas(self.frame, width=self.width, height=self.height)
 		self.canvas.place(x=-2,y=-2)
 
-		self.camera_position = Vector(0.0,0.0, 5.0)
+		self.camera_position = Vector(0.0,0.0, -4.0)
 		self.camera_target = Vector(0.0, 0.0, 0.0)
 		self.camera_up = Vector(0.0, 1.0, 0.0)
 
 		view_matrix = Matrix.look_at(self.camera_position, self.camera_target, self.camera_up)
 		project_matrix = Matrix.perspective(0.78, 640/480.0, -1.0, 1.0)
 		self.world_matrix = view_matrix * project_matrix
+		#self.world_matrix = project_matrix * view_matrix
 		
 		self.triangles = []
 		self.points = []
@@ -112,11 +113,12 @@ class mainWindow:
 		y_min = max(0, y_min)
 		y_max = min(self.height, y_max)
 		
-	
+		area = self.edgeFunction(v0, v1, v2)
+		
 		for x in range(x_min, x_max):
 			for y in range(y_min, y_max):
 				p = Vector(x,y,0)
-				area = self.edgeFunction(v0, v1, v2)
+				
 				w0 = self.edgeFunction(v1, v2, p)
 				w1 = self.edgeFunction(v2, v0, p)
 				w2 = self.edgeFunction(v0, v1, p)
@@ -124,7 +126,7 @@ class mainWindow:
 					w0 /= area
 					w1 /= area
 					w2 /= area
-					z = -(1.0/(v0.z * w0 + v1.z * w1 +  v2.z * w2))
+					z = (1.0/(v0.z * w0 + v1.z * w1 +  v2.z * w2))
 					if (z < self.depth_buffer[y][x]):
 						self.depth_buffer[y][x] = z
 						v0cam = self.world_matrix.transformPoint(triangle.p1)
@@ -133,11 +135,11 @@ class mainWindow:
 						px = (v0cam.x/-v0cam.z) * w0 + (v1cam.x/-v1cam.z) * w1 + (v2cam.x/-v2cam.z) * w2 
 						py = (v0cam.y/-v0cam.z) * w0 + (v1cam.y/-v1cam.z) * w1 + (v2cam.y/-v2cam.z) * w2
 
-						pt = Vector(px * z, py * z, -z)
+						pt = Vector(px * z, py * z, z)
 						
 						n = (v1cam - v0cam).cross(v2cam - v0cam).normalized()
 						view_direction = pt.normalized()
-						view_direction = Vector(-pt.x, -pt.y, -pt.z)
+						view_direction = Vector(-pt.x, -pt.y, -pt.z).normalized()
 						cosine = max(0, n.dot(view_direction))
 						self.plotPoint(x,y, cosine * 255)
 						
@@ -155,7 +157,7 @@ class mainWindow:
 	def project(self, point):
 		point = self.world_matrix.transformPoint(point)
 		x = (point.x * float(self.width) + float(self.width) / 2.0)
-		y = (point.y * float(self.height) + float(self.height) / 2.0)
+		y = (-point.y * float(self.height) + float(self.height) / 2.0)
 		return Vector(x, y, -point.z)
 												 
 	def loop(self):
@@ -165,7 +167,7 @@ class mainWindow:
 
 		#self.drawTriangle(Triangle(Vector(0.0,0.5,0.0), Vector(-0.5,-0.5,0.0), Vector(0.5,-0.5,0.0)) * Matrix.rotateY(self.angle))
 		for t in self.triangles:
-			self.drawTriangle(t)
+			self.drawTriangle(t * Matrix.rotateY(self.angle) * Matrix.translate(0.0, -0.5, 0.0))
 
 		self.im=Image.fromstring('L', (self.data.shape[1],\
 				self.data.shape[0]), self.data.astype('b').tostring())
@@ -177,7 +179,7 @@ class mainWindow:
 		if self.times%10==0:
 			print("%.02f FPS"%(self.times/(time.clock()-self.timestart)))
 
-		         
+			 
 		self.root.after(0, self.loop)
 		
 
